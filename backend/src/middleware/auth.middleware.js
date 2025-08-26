@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken"
 import { ApiError } from "../utills/api-error.js";
 import { db } from "../libs/db.js";
+import { UserRole } from "../generated/prisma/index.js";
 
 export const authMiddleware = async(req,res,next) => {
 
@@ -38,4 +39,26 @@ export const authMiddleware = async(req,res,next) => {
     }
 
 
+}
+
+
+export const checkAdmin = async(req,res,next) => {
+    try {
+
+        const  userId = req.user.id;
+
+        const user = await db.user.findUnique({
+            where:{ id:userId },select:{ role:true }
+        })
+
+        if(!user || user.role !== UserRole.ADMIN){
+            return res.status(403).json(new ApiError(403,"You don't have a access for create problems"))
+        }
+        next()        
+    } catch (error) {
+
+        console.error(error);
+        return res.status(500).json(new ApiError(500,"Internal Error in in checkAdmin auth"))
+        
+    }
 }
